@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbfbf9">
+  <title>Roadbook · Caminho Português da Costa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    :root {
+      --paper: #fbfbf9;
+      --surface: #ffffff;
+      --ink: #101b18;
+      --muted: #5e6863;
+      --faint: #8d9690;
+      --line: #dfe5e0;
+      --pine: #0c593f;
+      --pine-soft: #e9f2ed;
+      --pine-faint: #f4f8f5;
+      --gold: #bd8b2c;
+      --gold-soft: #fbf5e5;
+      --blue: #0b63b6;
+      --blue-soft: #edf5fd;
+      --amber: #c98300;
+      --amber-soft: #fff6df;
+      --shadow: 0 5px 18px rgba(20, 40, 30, .035);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: "DM Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.45; }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; }
+    button { font: inherit; }
+    button { color: inherit; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+    .roadbook { width: min(1480px, calc(100% - 56px)); margin: 0 auto; padding: 30px 0 0; }
+    .masthead { display: block; }
+    .title-block { padding-top: 6px; }
+    .title-block h1 { margin: 0; color: var(--ink); font-family: "Barlow Condensed", Impact, sans-serif; font-size: clamp(54px, 6vw, 88px); font-weight: 700; letter-spacing: .015em; line-height: .9; text-transform: uppercase; }
+    .title-block p { margin: 14px 0 0; font-size: 17px; font-weight: 500; }
+    .title-block p span { color: var(--muted); }
+
+    .metrics { display: flex; flex-wrap: wrap; gap: 24px; margin: 22px 0 24px; }
+    .metric { display: inline-flex; align-items: center; gap: 9px; min-width: 135px; color: var(--ink); }
+    .metric i { color: var(--ink); font-size: 20px; }
+    .metric span { font-size: 13px; }
+    .section-rule { border: 0; border-top: 1px solid var(--line); }
+
+    .table-scroll { overflow-x: clip; }
+    .roadbook-table { width: 100%; min-width: 0; table-layout: fixed; border-collapse: collapse; }
+    .roadbook-table col:nth-child(1) { width: 6%; }
+    .roadbook-table col:nth-child(2) { width: 12%; }
+    .roadbook-table col:nth-child(3) { width: 30%; }
+    .roadbook-table col:nth-child(4) { width: 14%; }
+    .roadbook-table col:nth-child(5) { width: 25%; }
+    .roadbook-table col:nth-child(6) { width: 13%; }
+    .roadbook-table th { padding: 14px 10px 10px; color: var(--ink); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-align: left; text-transform: uppercase; }
+    .roadbook-table th:first-child, .roadbook-table td:first-child { padding-left: 8px; }
+    .roadbook-table th:last-child, .roadbook-table td:last-child { padding-right: 8px; }
+    .roadbook-table td { padding: 10px 10px; border-top: 1px solid var(--line); vertical-align: middle; }
+    .itinerary-row { cursor: pointer; }
+    .itinerary-row > td { transition: background-color .15s ease; }
+    .itinerary-row:hover > td, .itinerary-row[aria-expanded="true"] > td { background: var(--pine-faint); }
+    .itinerary-row:focus-visible > td { outline: 2px solid var(--pine); outline-offset: -2px; }
+    .stage-detail-row[hidden] { display: none; }
+    .stage-detail-row > td { padding: 0; background: var(--pine-faint); }
+    .stage-detail { display: grid; grid-template-columns: minmax(220px, .85fr) minmax(0, 1.15fr); gap: 16px; padding: 14px 18px 18px 58px; border-top: 1px dashed #cbd9cf; }
+    .stage-map { min-height: 220px; width: 100%; overflow: hidden; border: 1px solid var(--line); border-radius: 4px; background: #dcecf0; }
+    .stage-detail-content { min-width: 0; }
+    .detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .detail-item { min-width: 0; padding: 9px 11px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); }
+    .detail-label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .detail-label i { color: var(--pine); font-size: 14px; }
+    .detail-item strong { display: block; margin-top: 4px; font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+    .detail-accommodation { margin-top: 10px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); }
+    .detail-accommodation-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+    .detail-section-label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .detail-section-label i { color: var(--pine); font-size: 15px; }
+    .detail-accommodation-status { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .detail-accommodation-status i { font-size: 15px; }
+    .detail-accommodation-status.confirmed { color: var(--pine); }
+    .detail-accommodation-status.open { color: var(--muted); }
+    .detail-accommodation-status.required { color: var(--blue); }
+    .detail-accommodation-main { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 10px 0 8px; }
+    .detail-accommodation-copy { min-width: 0; }
+    .detail-accommodation-copy strong { display: block; margin: 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+    .detail-accommodation-copy > span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .detail-price { flex: 0 0 auto; padding-left: 16px; border-left: 1px solid var(--line); text-align: right; }
+    .detail-price .detail-label { justify-content: flex-end; }
+    .detail-price strong { display: block; margin-top: 2px; color: var(--ink); font-family: "DM Mono", monospace; font-size: 14px; font-weight: 600; }
+    .detail-accommodation-actions { display: flex; align-items: center; justify-content: flex-end; min-height: 21px; }
+    .detail-link, .detail-muted { display: inline-flex; align-items: center; gap: 5px; margin-top: 0; font-size: 12px; }
+    .detail-link { color: var(--pine); font-weight: 700; text-decoration: none; }
+    .detail-muted { color: var(--faint); }
+    .detail-link:hover, .detail-link:focus-visible { text-decoration: underline; outline: none; }
+    .detail-route, .detail-extra, .detail-points { display: flex; align-items: flex-start; gap: 7px; color: var(--muted); line-height: 1.45; }
+    .detail-route { margin: 10px 0 0; font-size: 11px; }
+    .detail-extra { margin-top: 9px; font-size: 12px; }
+    .detail-points { margin-top: 10px; font-size: 11px; }
+    .detail-route > i, .detail-extra > i, .detail-points > i { flex: 0 0 auto; margin-top: 2px; color: var(--pine); font-size: 14px; }
+    .detail-route strong, .detail-extra strong, .detail-points strong { color: var(--ink); }
+    .day-number { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--pine); color: #fff; font-size: 12px; font-weight: 700; }
+    .day-number.prep { background: var(--pine-faint); color: var(--pine); border: 1px solid #cfe0d5; }
+    .date { font-size: 13px; font-weight: 600; text-transform: uppercase; }
+    .date small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 400; text-transform: none; }
+    .stage { font-size: 14px; font-weight: 600; }
+    .stage-note { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; font-weight: 400; }
+    .distance { font-family: "DM Mono", monospace; font-size: 12px; white-space: nowrap; }
+    .accommodation strong { display: block; font-size: 13px; font-weight: 600; }
+    .accommodation span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .accommodation .accommodation-status { margin-top: 5px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .accommodation-status.confirmed { color: var(--pine); }
+    .accommodation-status.candidate { color: var(--amber); }
+    .accommodation-status.required { color: var(--blue); }
+    .state { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .state i { font-size: 19px; }
+    .state-confirmed { color: var(--pine); }
+    .state-candidate { color: var(--amber); }
+    .state-open { color: #a6afaa; }
+    .state-required { color: var(--blue); }
+
+    .lower-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 14px; align-items: start; }
+    .map-panel { grid-column: 1 / -1; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); overflow: hidden; }
+    .panel-title { margin: 0; padding: 12px 15px 9px; font-size: 13px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+    .panel-body { padding: 0 15px 12px; }
+    .map-panel .panel-body { padding: 0; }
+    #roadbook-map { height: 270px; width: 100%; background: #dcecf0; }
+    .leaflet-container { font: 11px "DM Sans", sans-serif; }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--surface); color: var(--ink); }
+    .leaflet-popup-content { margin: 10px 12px; font-size: 12px; }
+    .leaflet-control-attribution { font-size: 9px; }
+    .map-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; padding: 8px 12px; border-top: 1px solid var(--line); }
+    .map-footer a { display: inline-flex; align-items: center; gap: 6px; color: var(--pine); font-size: 12px; font-weight: 700; text-decoration: none; }
+    .map-footer a:hover, .map-footer a:focus-visible { text-decoration: underline; outline: none; }
+    .map-footer .map-source { font-size: 10px; font-weight: 600; }
+    .map-footer span { color: var(--muted); font-size: 10px; }
+
+    .budget-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .budget-note { margin: 0 0 8px; color: var(--faint); font-size: 10px; }
+    .budget-row { display: flex; justify-content: space-between; gap: 14px; color: var(--muted); font-size: 12px; }
+    .budget-row > span { min-width: 0; }
+    .budget-row small { display: block; margin-top: 2px; color: var(--faint); font-size: 10px; }
+    .budget-row strong { color: var(--ink); font-family: "DM Mono", monospace; font-size: 12px; font-weight: 500; text-align: right; white-space: nowrap; }
+    .budget-total { margin: 10px -15px -12px; padding: 9px 15px; border-top: 1px solid var(--line); background: var(--pine-faint); }
+    .budget-total .budget-row { color: var(--ink); font-weight: 600; }
+    .budget-total strong { font-size: 15px; font-weight: 700; }
+    .roadbook-footer { display: flex; justify-content: space-between; gap: 20px; margin: 6px 10px 0; color: var(--muted); font-size: 11px; }
+    .footer-mark { color: var(--pine); font-weight: 700; }
+
+    @media (max-width: 980px) {
+      .roadbook { width: min(100% - 32px, 740px); }
+      .metrics { gap: 15px 24px; }
+      .roadbook-table th, .roadbook-table td { padding-right: 6px; padding-left: 6px; }
+      .roadbook-table th { font-size: 10px; }
+      .roadbook-table td { font-size: 12px; }
+      .stage { font-size: 13px; overflow-wrap: anywhere; }
+      .stage-note, .accommodation span { font-size: 10px; }
+      .accommodation strong { font-size: 12px; overflow-wrap: anywhere; }
+      .state { white-space: normal; line-height: 1.15; }
+      .distance { white-space: normal; }
+      .stage-detail { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); padding-left: 30px; }
+      .lower-grid { grid-template-columns: minmax(0, 1fr); }
+      #roadbook-map { height: 300px; }
+    }
+    @media (max-width: 640px) {
+      .roadbook { width: calc(100% - 24px); padding-top: 18px; }
+      .masthead { display: block; }
+      .title-block { padding-top: 0; }
+      .title-block h1 { font-size: 57px; line-height: .88; }
+      .title-block p { font-size: 14px; }
+      .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 23px 0 25px; gap: 16px 10px; }
+      .metric { min-width: 0; }
+      .metric i { font-size: 18px; }
+      .metric span { font-size: 12px; }
+      .roadbook-table col:nth-child(1) { width: 16%; }
+      .roadbook-table col:nth-child(2) { width: 24%; }
+      .roadbook-table col:nth-child(3) { width: 60%; }
+      .roadbook-table col:nth-child(n+4) { display: none; }
+      .roadbook-table th:nth-child(n+4), .itinerary-row td:nth-child(n+4) { display: none; }
+      .stage-detail { grid-template-columns: 1fr; padding: 12px; }
+      .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .detail-accommodation-main { align-items: flex-start; gap: 12px; }
+      .detail-accommodation-actions { justify-content: flex-start; }
+      .stage-map { min-height: 220px; }
+      .lower-grid { grid-template-columns: 1fr; }
+      .map-panel { grid-column: auto; }
+      #roadbook-map { height: 330px; }
+      .roadbook-footer { display: block; margin-top: 18px; }
+      .roadbook-footer .footer-mark { display: block; margin-top: 6px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .roadbook { width: 100%; padding: 0; }
+      .panel { break-inside: avoid; box-shadow: none; }
+      .roadbook-table { min-width: 0; }
+      #roadbook-map { height: 280px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="roadbook" id="roadbook"></main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const roadbookElement = document.getElementById("roadbook");
+    const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" })[character]);
+    const safeClass = (value) => String(value ?? "").replace(/[^a-z0-9_-]/gi, "");
+    const icon = (name) => `<i class="${safeClass(name)}" aria-hidden="true"></i>`;
+
+    const stageMaps = new Map();
+    const nearestPathPoint = (path, coords) => path.reduce((nearest, point, index) => {
+      const distance = (point[0] - coords[0]) ** 2 + (point[1] - coords[1]) ** 2;
+      return distance < nearest.distance ? { index, distance } : nearest;
+    }, { index: 0, distance: Infinity });
+    const findPlaceCoords = (name, places) => places.find((place) => place.name === name)?.coords;
+    const sliceOfficialPaths = (paths, fromName, toName, places) => {
+      const fromCoords = findPlaceCoords(fromName, places);
+      const toCoords = findPlaceCoords(toName, places);
+      if (!paths.length || !fromCoords || !toCoords) return paths;
+      const start = paths.map((path, pathIndex) => ({ pathIndex, ...nearestPathPoint(path, fromCoords) })).sort((a, b) => a.distance - b.distance)[0];
+      const end = paths.map((path, pathIndex) => ({ pathIndex, ...nearestPathPoint(path, toCoords) })).sort((a, b) => a.distance - b.distance)[0];
+      if (start.pathIndex === end.pathIndex) {
+        const [first, last] = start.index <= end.index ? [start.index, end.index] : [end.index, start.index];
+        const slice = paths[start.pathIndex].slice(first, last + 1);
+        return start.index <= end.index ? [slice] : [slice.reverse()];
+      }
+      if (start.pathIndex > end.pathIndex) return paths;
+      const sliced = [paths[start.pathIndex].slice(start.index)];
+      for (let pathIndex = start.pathIndex + 1; pathIndex < end.pathIndex; pathIndex += 1) sliced.push(paths[pathIndex]);
+      sliced.push(paths[end.pathIndex].slice(0, end.index + 1));
+      return sliced;
+    };
+    const getStagePaths = (row, data) => (row.detail?.officialSegments || []).flatMap((segment) => {
+      const allPaths = data.map.officialRoute?.paths?.[segment.id] || [];
+      const paths = Array.isArray(segment.pathIndexes) ? segment.pathIndexes.map((pathIndex) => allPaths[pathIndex]).filter(Boolean) : allPaths;
+      return segment.from && segment.to ? sliceOfficialPaths(paths, segment.from, segment.to, data.map.places) : paths;
+    });
+    const getMainOfficialPaths = (mapConfig) => (mapConfig.officialRoute?.stageFolders || []).flatMap((name) => mapConfig.officialRoute?.paths?.[name] || []);
+    const formatBudgetNumber = new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 0 });
+    const formatDistanceNumber = new Intl.NumberFormat("pt-PT", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const renderDistance = (row) => typeof row.distanceKmGps === "number" ? `~${formatDistanceNumber.format(row.distanceKmGps)} km${row.distanceQualifier ? ` ${row.distanceQualifier}` : ""}` : (row.distance || "—");
+    const detailIcons = { distance: "ri-route-line", difficulty: "ri-bar-chart-line", status: "ri-checkbox-circle-line", accommodation: "ri-hotel-bed-line", price: "ri-money-euro-circle-line", link: "ri-external-link-line", emptyLink: "ri-link-m", route: "ri-map-2-line", more: "ri-information-line", points: "ri-map-pin-line" };
+    const getStatusInfo = (row) => {
+      const label = row.accommodation?.status || row.state?.label || "";
+      const normalized = label.toLowerCase();
+      const confirmed = normalized.includes("fechado");
+      const candidate = normalized.includes("candidato");
+      return { label, tone: confirmed ? "confirmed" : candidate ? "candidate" : (row.accommodation?.tone || row.state?.tone || "open"), icon: confirmed ? "ri-checkbox-circle-line" : candidate ? "ri-time-line" : (row.state?.icon || "ri-information-line") };
+    };
+    const formatBudgetRange = (min, max) => min === max ? formatBudgetNumber.format(min) : `${formatBudgetNumber.format(min)}–${formatBudgetNumber.format(max)}`;
+    const calculateBudget = (budget) => budget.categories.reduce((total, category) => {
+      const multiplier = Number(category.multiplier) || 1;
+      const min = Number(category.min) * multiplier;
+      const max = Number(category.max) * multiplier;
+      if (!Number.isFinite(min) || !Number.isFinite(max)) return { ...total, valid: false };
+      return { min: total.min + min, max: total.max + max, valid: total.valid };
+    }, { min: 0, max: 0, valid: true });
+    const renderBudget = (budget) => budget.categories.map((category) => {
+      const multiplier = Number(category.multiplier) || 1;
+      const min = Number(category.min) * multiplier;
+      const max = Number(category.max) * multiplier;
+      const hasNumbers = Number.isFinite(min) && Number.isFinite(max);
+      const total = hasNumbers ? `${formatBudgetRange(min, max)} ${budget.currency}` : (budget.missingLabel || "A validar");
+      const basis = category.unitLabel ? `${formatBudgetRange(Number(category.min), Number(category.max))} ${budget.currency} ${category.unitLabel}${multiplier > 1 ? ` × ${category.multiplierLabel || multiplier}` : ""}` : "";
+      return `<li class="budget-row"><span>${escapeHtml(category.label)}${basis ? `<small>${escapeHtml(basis)}</small>` : ""}</span><strong>${escapeHtml(total)}</strong></li>`;
+    }).join("");
+    const renderNotes = (notes) => `${notes?.lead ? `<strong>${escapeHtml(notes.lead)}</strong>` : ""}${escapeHtml(notes?.detail || "")}`;
+    const renderDetailItem = (label, value, fallback, iconName, tone) => `<div class="detail-item${tone ? ` detail-item-${safeClass(tone)}` : ""}"><span class="detail-label">${icon(iconName || "ri-information-line")}<span>${escapeHtml(label)}</span></span><strong>${escapeHtml(value || fallback)}</strong></div>`;
+    const renderStageDetail = (row, index, data) => {
+      const labels = data.ui.detailLabels;
+      const detail = row.detail || {};
+      const points = (detail.mapPoints || []).map((name) => data.map.places.find((place) => place.name === name)).filter(Boolean);
+      const pointsLabel = points.length ? points.map((place) => escapeHtml(place.name)).join(" → ") : escapeHtml(labels.notDefined);
+      const accommodationUrl = /^https?:\/\//i.test(detail.accommodationLink || "") ? detail.accommodationLink : "";
+      const accommodationLink = accommodationUrl ? `<a class="detail-link" href="${escapeHtml(accommodationUrl)}" target="_blank" rel="noreferrer">${icon(detailIcons.link)}<span>${escapeHtml(labels.link)}</span></a>` : `<span class="detail-muted">${icon(detailIcons.emptyLink)}<span>${escapeHtml(labels.linkEmpty)}</span></span>`;
+      const statusInfo = getStatusInfo(row);
+      const routeNote = detail.routeNote || (detail.officialSegments?.length ? labels.route : labels.routeUnavailable);
+      return `<tr id="stage-detail-${index}" class="stage-detail-row" hidden><td colspan="6"><div class="stage-detail"><div id="stage-map-${index}" class="stage-map" role="img" aria-label="${escapeHtml(`${labels.points} · ${row.stage}`)}"></div><div class="stage-detail-content"><div class="detail-grid">${renderDetailItem(labels.distance, renderDistance(row), labels.notDefined, detailIcons.distance)}${renderDetailItem(labels.difficulty, detail.difficulty, labels.notDefined, detailIcons.difficulty)}${renderDetailItem(labels.status, statusInfo.label, labels.notDefined, statusInfo.icon, statusInfo.tone)}</div><div class="detail-accommodation"><div class="detail-accommodation-head"><span class="detail-section-label">${icon(detailIcons.accommodation)}<span>${escapeHtml(labels.accommodation)}</span></span></div><div class="detail-accommodation-main"><div class="detail-accommodation-copy"><strong>${escapeHtml(row.accommodation?.title)}</strong><span>${escapeHtml(row.accommodation?.detail)}</span></div><div class="detail-price"><span class="detail-label">${icon(detailIcons.price)}<span>${escapeHtml(labels.price)}</span></span><strong>${escapeHtml(detail.accommodationPrice || labels.notDefined)}</strong></div></div><div class="detail-accommodation-actions">${accommodationLink}</div></div><p class="detail-route">${icon(detailIcons.route)}<span><strong>${escapeHtml(labels.route)}:</strong> ${escapeHtml(routeNote)}</span></p>${detail.extra ? `<p class="detail-extra">${icon(detailIcons.more)}<span>${escapeHtml(detail.extra)}</span></p>` : ""}${row.notes ? `<p class="detail-extra">${icon(detailIcons.more)}<span><strong>${escapeHtml(labels.more)}:</strong> ${renderNotes(row.notes)}</span></p>` : ""}${row.distanceSource ? `<p class="detail-extra">${icon(detailIcons.distance)}<span><strong>${escapeHtml(labels.distance)}:</strong> ${escapeHtml(row.distanceSource)}</span></p>` : ""}<div class="detail-points">${icon(detailIcons.points)}<span><strong>${escapeHtml(labels.points)}:</strong> ${pointsLabel}</span></div></div></div></td></tr>`;
+    };
+    const renderItinerary = (rows, data) => rows.map((row, index) => {
+      const prepClass = row.dayLabel === "—" ? " prep" : "";
+      const accommodationStatus = row.accommodation.status ? `<span class="accommodation-status ${safeClass(row.accommodation.tone)}">${escapeHtml(row.accommodation.status)}</span>` : "";
+      const stageNote = row.stageNote ? `<span class="stage-note">${escapeHtml(row.stageNote)}</span>` : "";
+      return `<tr class="itinerary-row" data-row-index="${index}" tabindex="0" role="button" aria-expanded="false" aria-controls="stage-detail-${index}" aria-label="${escapeHtml(`${row.stage} · ${data.ui.expandLabel}`)}"><td><span class="day-number${prepClass}">${escapeHtml(row.dayLabel)}</span></td><td class="date">${escapeHtml(row.date)}<small>${escapeHtml(row.weekday)}</small></td><td class="stage">${escapeHtml(row.stage)}${stageNote}</td><td class="distance">${escapeHtml(renderDistance(row))}</td><td class="accommodation"><strong>${escapeHtml(row.accommodation.title)}</strong><span>${escapeHtml(row.accommodation.detail)}</span>${accommodationStatus}</td><td><span class="state state-${safeClass(row.state.tone)}">${icon(row.state.icon)}${escapeHtml(row.state.label)}</span></td></tr>${renderStageDetail(row, index, data)}`;
+    }).join("");
+
+    const renderRoadbook = (data) => {
+      document.title = data.meta.pageTitle;
+      const tableHeaders = data.plan.trip.tableHeaders.map((header) => `<th>${escapeHtml(header)}</th>`).join("");
+      const metrics = data.plan.trip.metrics.map((metric) => `<div class="metric">${icon(metric.icon)}<span>${escapeHtml(metric.label)}</span></div>`).join("");
+      const budget = data.support.budget;
+      const budgetTotal = calculateBudget(budget);
+      const budgetTotalLabel = budgetTotal.valid ? `${formatBudgetRange(budgetTotal.min, budgetTotal.max)} ${budget.currency}` : (budget.missingLabel || "A validar");
+      const officialSource = data.map.officialRoute?.sourceUrl ? `<a class="map-source" href="${escapeHtml(data.map.officialRoute.sourceUrl)}" target="_blank" rel="noreferrer">${icon("ri-route-line")}${escapeHtml(data.map.officialRoute.sourceLabel)}</a>` : "";
+      roadbookElement.innerHTML = `<header class="masthead"><div class="title-block"><h1>${escapeHtml(data.plan.trip.title)}</h1><p>${escapeHtml(data.plan.trip.dateLabel)} <span>·</span> ${escapeHtml(data.plan.trip.summaryLabel)}</p></div></header><section class="metrics" aria-label="${escapeHtml(data.ui.tripSummaryLabel)}">${metrics}</section><hr class="section-rule"><section aria-labelledby="itinerary-title"><h2 id="itinerary-title" class="sr-only">${escapeHtml(data.ui.itineraryLabel)}</h2><div class="table-scroll"><table class="roadbook-table"><colgroup><col><col><col><col><col><col></colgroup><thead><tr>${tableHeaders}</tr></thead><tbody>${renderItinerary(data.plan.itinerary, data)}</tbody></table></div></section><section class="lower-grid" aria-label="${escapeHtml(data.ui.supportLabel)}"><section class="panel map-panel" aria-labelledby="map-title"><h2 id="map-title" class="panel-title">${escapeHtml(data.map.title)}</h2><div class="panel-body"><div id="roadbook-map" role="img" aria-label="${escapeHtml(data.map.ariaLabel)}"></div><div class="map-footer"><a href="${escapeHtml(data.map.link.href)}" target="_blank" rel="noreferrer">${icon("ri-external-link-line")}${escapeHtml(data.map.link.label)}</a><span>${escapeHtml(data.map.note)}</span>${officialSource}</div></div></section><section class="panel budget-panel" aria-labelledby="budget-title"><h2 id="budget-title" class="panel-title">${escapeHtml(budget.title)}</h2><div class="panel-body"><p class="budget-note">${escapeHtml(budget.note)}</p><ul class="budget-list">${renderBudget(budget)}</ul><div class="budget-total"><div class="budget-row"><span>${escapeHtml(budget.totalLabel)}</span><strong>${escapeHtml(budgetTotalLabel)}</strong></div></div></div></section></section><footer class="roadbook-footer"><span>${escapeHtml(data.meta.updatedLabel)} · ${escapeHtml(data.meta.sourceLabel)}</span><span class="footer-mark">${escapeHtml(data.footer.closing)} ${icon(data.footer.icon)}</span></footer>`;
+      initialiseMap(data.map);
+      bindRowInteractions(data);
+    };
+
+    const createMap = (mapElement, places, mapConfig, routePaths = []) => {
+      if (!window.L || !mapElement || !places.length) return null;
+      const map = L.map(mapElement, { scrollWheelZoom: false });
+      L.tileLayer(mapConfig.provider.tileUrl, { maxZoom: mapConfig.provider.maxZoom, attribution: mapConfig.provider.attribution }).addTo(map);
+      const paths = routePaths.length ? routePaths : (places.length > 1 ? [places.map((place) => place.coords)] : []);
+      const pathLayers = paths.map((path) => L.polyline(path, { color: "#0c593f", weight: 4, opacity: .9 }).addTo(map));
+      const iconConfig = L.icon({ iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png", shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+      const markerLayers = places.map((place) => L.marker(place.coords, { icon: iconConfig }).addTo(map).bindPopup(`<strong>${escapeHtml(place.name)}</strong><br>${escapeHtml(place.detail)}`));
+      const bounds = L.featureGroup([...pathLayers, ...markerLayers]).getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [20, 20] });
+      return map;
+    };
+
+    const initialiseMap = (mapConfig) => {
+      const mapElement = document.getElementById("roadbook-map");
+      createMap(mapElement, mapConfig.places, mapConfig, getMainOfficialPaths(mapConfig));
+    };
+
+    const initialiseStageMap = (index, row, data) => {
+      if (stageMaps.has(index)) return;
+      const detail = row.detail || {};
+      const places = (detail.mapPoints || []).map((name) => data.map.places.find((place) => place.name === name)).filter(Boolean);
+      const map = createMap(document.getElementById(`stage-map-${index}`), places, data.map, getStagePaths(row, data));
+      if (map) stageMaps.set(index, map);
+    };
+
+    const bindRowInteractions = (data) => {
+      roadbookElement.querySelectorAll(".itinerary-row").forEach((rowElement) => {
+        const index = Number(rowElement.dataset.rowIndex);
+        const toggle = () => {
+          const expanded = rowElement.getAttribute("aria-expanded") === "true";
+          const nextExpanded = !expanded;
+          const detailElement = document.getElementById(rowElement.getAttribute("aria-controls"));
+          rowElement.setAttribute("aria-expanded", String(nextExpanded));
+          rowElement.setAttribute("aria-label", `${data.plan.itinerary[index].stage} · ${nextExpanded ? data.ui.collapseLabel : data.ui.expandLabel}`);
+          detailElement.hidden = !nextExpanded;
+          if (nextExpanded) {
+            initialiseStageMap(index, data.plan.itinerary[index], data);
+            requestAnimationFrame(() => stageMaps.get(index)?.invalidateSize());
+          }
+        };
+        rowElement.addEventListener("click", (event) => {
+          if (!event.target.closest("a, button")) toggle();
+        });
+        rowElement.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            toggle();
+          }
+        });
+      });
+    };
+
+    fetch("roadbook.json", { cache: "no-store" }).then((response) => {
+      if (!response.ok) throw new Error(`roadbook.json: ${response.status}`);
+      return response.json();
+    }).then(renderRoadbook).catch((error) => {
+      console.error(error);
+      roadbookElement.innerHTML = "<p class=\"load-state\">Não foi possível carregar o roadbook.json.</p>";
+    });
+  </script>
+</body>
+</html>
