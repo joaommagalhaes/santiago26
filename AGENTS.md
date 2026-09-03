@@ -1,6 +1,6 @@
 # Camino Planning Rules
 
-This repository is the persistent source of truth for planning the Caminho de Santiago trip. All planning data lives in `roadbook.json`.
+This repository is the persistent source of truth for planning the Caminho de Santiago trip. The complete publishable roadbook lives in `index.html`; all planning data is stored as JSON in its `<script type="application/json" id="roadbook-data">` block.
 
 ## Core rules
 
@@ -17,7 +17,7 @@ This repository is the persistent source of truth for planning the Caminho de Sa
 - Follow the official Caminho Portugues da Costa route unless the user explicitly changes this decision.
 - Prefer interesting towns/cities with good accommodation and food over perfectly equal stage distances.
 - Do not silently replace a closed decision. Mark any proposed change explicitly.
-- Whenever a decision is closed, update `roadbook.json` and update `index.html` only if the visible roadbook needs to change.
+- Whenever a decision is closed, update the `roadbook-data` JSON block in `index.html`; it is the single source of truth and visible roadbook.
 - Keep confirmed decisions clearly separate from candidates and open questions.
 - Use PT-PT for user-facing planning notes unless asked otherwise.
 

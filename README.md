@@ -1,35 +1,35 @@
 # Santiago Planner
 
-Base local para continuar o planeamento do Caminho de Santiago no Codex.
+Roadbook autónomo do Caminho de Santiago, preparado para o bloco **HTML · Embeds** do Notion.
 
-## Abrir o roadbook
+## Ficheiro publicável
 
-No terminal, dentro desta pasta:
+Toda a aplicação vive em `index.html`:
 
-```bash
-./serve.sh
-```
+- estilos dentro de `<style>`;
+- plano completo dentro de `<script type="application/json" id="roadbook-data">`;
+- renderer e interacções dentro do último `<script>`.
 
-Depois abrir:
+Não existem dependências locais. O ficheiro pode ser aberto directamente num browser ou inserido no bloco HTML do Notion. É necessária ligação à internet para carregar as fontes, os ícones, o Leaflet e os tiles do OpenStreetMap.
 
-```text
-http://localhost:8080
-```
+## Incorporar no Notion
 
-## Fonte única de verdade
+1. Criar um bloco `/HTML` e seleccionar **HTML · Embeds**.
+2. Abrir `index.html` como texto e copiar todo o conteúdo.
+3. Colar o HTML no bloco e confirmar a incorporação.
 
-- `roadbook.json` - plano, etapas, alojamentos, regras, decisões, orçamento, mapas e todos os dados visíveis; editar este ficheiro e recarregar a página actualiza a apresentação
-- `AGENTS.md` - regras para o Codex
-- `index.html` - roadbook visual numa única página
+O ficheiro tem cerca de 230 KB. Não precisa de alojamento, build, servidor nem uploads adicionais.
 
-O mapa do roadbook usa Leaflet com tiles públicos do OpenStreetMap e mantém a atribuição visível no mapa. As coordenadas do traçado oficial estão embutidas em `roadbook.json`, sob `map.officialRoute.paths`; a fonte original está identificada no rodapé do mapa. A geometria está simplificada com Ramer–Douglas–Peucker (tolerância de 2 m), e a redução fica documentada em `map.officialRoute.simplification`.
+## Editar o plano
 
-O `index.html` não contém os dados da viagem: carrega `roadbook.json` com `cache: no-store` e renderiza o cabeçalho, itinerário, estados, detalhes expansíveis de cada etapa, mapas, orçamento calculado e rodapé a partir desse ficheiro. O bloco `plan` reúne o conteúdo que anteriormente estava disperso por `PLAN.md`, `itinerary.json` e `accommodation.json`. Depois de editar o JSON, basta recarregar `http://localhost:8080`.
+O bloco `roadbook-data` é a fonte única de verdade. Mantém o mesmo modelo JSON de viagem, etapas, alojamentos, decisões, orçamento e mapas; ao alterá-lo, é obrigatório preservar JSON válido.
 
-Cada item em `plan.itinerary` pode incluir `detail.difficulty`, `detail.mapPoints`, `detail.officialSegments`, `detail.routeNote`, `detail.accommodationPrice` e `detail.accommodationLink`. As distâncias visíveis são derivadas de `distanceKmGps`, calculado sobre as polilinhas embutidas, e `distanceSource` explica a base da medição; `distanceKmEstimate` mantém a aproximação original para comparação. Os `officialSegments` referenciam as secções oficiais já embutidas no JSON, podem indicar `from`/`to` para recortar uma etapa e `pathIndexes` para excluir ramais alternativos da distância principal. O orçamento usa `support.budget.categories` com `min`, `max` e `multiplier`; o total é calculado no browser, por isso não é necessário editar os totais manualmente.
+Cada item em `plan.itinerary` pode incluir `detail.difficulty`, `detail.duration`, `detail.elevation`, `detail.mapPoints`, `detail.officialSegments`, `detail.routeNote`, `detail.warnings`, `detail.timeline`, `detail.waypoints`, `detail.food`, `detail.water`, `detail.pharmacies`, `detail.escapePoints`, `detail.luggage`, `detail.accommodationPrice` e `detail.accommodationLink`. As secções opcionais só aparecem quando têm dados.
+
+As distâncias visíveis são derivadas de `distanceKmGps`, calculado sobre as polilinhas oficiais embebidas. Os `officialSegments` podem indicar `from`/`to` para recortar uma etapa e `pathIndexes` para excluir ramais alternativos. O orçamento é calculado no browser a partir de `support.budget.categories`.
+
+O mapa geral só é criado quando se aproxima do ecrã e os mapas das etapas apenas quando cada detalhe é aberto. O renderer limpa instâncias e listeners anteriores, usa canvas para as polilinhas e apresenta uma recuperação explícita se o JSON embebido for inválido.
 
 ## Como continuar no Codex
 
-Exemplo:
-
-> Continua o planeamento a partir dos ficheiros deste projeto. Respeita AGENTS.md. O próximo ponto é validar o transporte de bagagem. Sempre que fecharmos uma decisão, actualiza o roadbook.
+> Continua o planeamento a partir de `index.html`. Respeita `AGENTS.md`. O próximo ponto é validar o transporte de bagagem. Sempre que fecharmos uma decisão, actualiza o bloco `roadbook-data` e a apresentação quando necessário.
